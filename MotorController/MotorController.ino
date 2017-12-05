@@ -1,4 +1,5 @@
 #include <Wire.h>
+#include <EEPROM.h>
 #include <Adafruit_PWMServoDriver.h>
 
 // default I2C address 0x40
@@ -6,6 +7,7 @@ Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 
 #define SERVOS 6
 // Motors should be hooked up: Green, Red, Yellow, Blue, Orange, Strum
+// Acceptable defaults
 int16_t offsets[] = {0, 0, 0, 0, 0, 0 };
 uint16_t down_pos = 425;
 uint16_t up_pos = 350;
@@ -19,12 +21,15 @@ char state = 0;
 // 1100_0001 : query downpos
 // 1100_0010 : query up pos
 // 1110_1xxx : query offset for motor xxx
+// 1111_0000 : save to nvram
+// 1111_1111 : reload from nvram
 
 // Different commands
 #define MSG_STATE 0x00
 #define MSG_SET_OFFSET 0x40
 #define MSG_SET_POS 0x80
 #define MSG_QUERY 0xC0
+#define MSG_EEPROM 0xF0
 
 int command = 0;
 char buffer[2];
@@ -40,10 +45,41 @@ void write_two(uint16_t val) {
   Serial.write(val & 0xFF);
 }
 
+#define EEPROM_START 0x0001
+#define EEPROM_UP_POS EEPROM_START+0x00
+#define EEPROM_DOWN_POS EEPROM_START+0x02
+#define EEPROM_OFFSETS EEPROM_START+0x04
+void eeprom_load() {
+  up_pos = EEPROM.read(EEPROM_UP_POS) | (EEPROM.read(EEPROM_UP_POS+1) << 8);
+  down_pos = EEPROM.read(EEPROM_DOWN_POS) | (EEPROM.read(EEPROM_DOWN_POS+1) << 8);
+  for(int i = 0; i < SERVOS; i++) {
+    offsets[i] = EEPROM.read(EEPROM_OFFSETS+(2*i)) | (EEPROM.read(EEPROM_OFFSETS+(2*i)+1) << 8);
+  }
+}
+
+void eeprom_commit() {
+  EEPROM.update(EEPROM_UP_POS, up_pos & 0xFF);
+  EEPROM.update(EEPROM_UP_POS+1, up_pos >> 8);
+  EEPROM.update(EEPROM_DOWN_POS, down_pos & 0xFF);
+  EEPROM.update(EEPROM_DOWN_POS+1, down_pos >> 8);
+  for(int i = 0; i < SERVOS; i++) {
+    EEPROM.update(EEPROM_OFFSETS+(2*i), offsets[i] & 0xFF);
+    EEPROM.update(EEPROM_OFFSETS+(2*i)+1, offsets[i] >> 8);
+  }
+}
+
+#define MAGIC 0x42
 void setup() {
   Serial.begin(115200);
   pwm.begin();
   pwm.setPWMFreq(50);  // Analog servos run at ~60 Hz updates
+  // Check for valid EEPROM header before loading values
+  if(EEPROM.read(0) == MAGIC) {
+    eeprom_load();
+  } else {
+    eeprom_commit();
+    EEPROM.write(0, MAGIC);
+  }
   for(char i = 0; i < SERVOS; i++) {
     pwm.setPWM(i, 0, up_pos + offsets[i]);
   }
@@ -68,20 +104,30 @@ void loop() {
           }
         break;
       case MSG_QUERY:
-        if(command & 0x20) {
-          write_two(offsets[command & 0x7]);
-        } else {
-          switch(command & 0x3) {
-            case 0:
-              Serial.write(state);
-              break;
-            case 1:
-              write_two(down_pos);
-              break;
-            case 2:
-              write_two(up_pos);
-              break;
-          }
+        switch(command & 0xF0) {
+          case 0xC0:
+            switch(command & 0x3) {
+              case 0:
+                Serial.write(state);
+                break;
+              case 1:
+                write_two(down_pos);
+                break;
+              case 2:
+                write_two(up_pos);
+                break;
+            }
+            break;
+          case 0xE0:
+            write_two(offsets[command & 0x7]);
+            break;
+          case 0xF0:
+            if((command & 0xF) == 0x0) {
+              eeprom_commit();
+            }else {
+              eeprom_load();
+            }
+            break;
         }
         break;
     }
