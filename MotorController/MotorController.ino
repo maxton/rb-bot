@@ -8,9 +8,9 @@ Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 #define SERVOS 6
 // Motors should be hooked up: Green, Red, Yellow, Blue, Orange, Strum
 // Acceptable defaults
-int16_t offsets[] = {0, 0, 0, 0, 0, 0 };
+int16_t offsets[] = {1, 2, 3, 4, 5, 6 };
 uint16_t down_pos = 425;
-uint16_t up_pos = 350;
+uint16_t up_pos = 360;
 char state = 0;
 
 // 00xx_xxxx : Set state to xx_xxxx
@@ -41,8 +41,9 @@ uint16_t read_two() {
 }
 
 void write_two(uint16_t val) {
-  Serial.write(val >> 8);
-  Serial.write(val & 0xFF);
+  buffer[0] = val >> 8;
+  buffer[1] = val & 0xFF;
+  Serial.write(buffer, 2);
 }
 
 #define EEPROM_START 0x0001
@@ -50,10 +51,10 @@ void write_two(uint16_t val) {
 #define EEPROM_DOWN_POS EEPROM_START+0x02
 #define EEPROM_OFFSETS EEPROM_START+0x04
 void eeprom_load() {
-  up_pos = EEPROM.read(EEPROM_UP_POS) | (EEPROM.read(EEPROM_UP_POS+1) << 8);
-  down_pos = EEPROM.read(EEPROM_DOWN_POS) | (EEPROM.read(EEPROM_DOWN_POS+1) << 8);
+  up_pos = EEPROM.read(EEPROM_UP_POS) | ((uint16_t)EEPROM.read(EEPROM_UP_POS+1) << 8);
+  down_pos = EEPROM.read(EEPROM_DOWN_POS) | ((uint16_t)EEPROM.read(EEPROM_DOWN_POS+1) << 8);
   for(int i = 0; i < SERVOS; i++) {
-    offsets[i] = EEPROM.read(EEPROM_OFFSETS+(2*i)) | (EEPROM.read(EEPROM_OFFSETS+(2*i)+1) << 8);
+    offsets[i] = EEPROM.read(EEPROM_OFFSETS+(2*i)) | ((int16_t)EEPROM.read(EEPROM_OFFSETS+(2*i)+1) << 8);
   }
 }
 
@@ -68,9 +69,9 @@ void eeprom_commit() {
   }
 }
 
-#define MAGIC 0x42
+#define MAGIC 0x45
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(57600);
   pwm.begin();
   pwm.setPWMFreq(50);  // Analog servos run at ~60 Hz updates
   // Check for valid EEPROM header before loading values
@@ -83,6 +84,7 @@ void setup() {
   for(char i = 0; i < SERVOS; i++) {
     pwm.setPWM(i, 0, up_pos + offsets[i]);
   }
+  pinMode(LED_BUILTIN, OUTPUT);
   yield();
 }
 
@@ -94,14 +96,14 @@ void loop() {
         state = command & 0x3f;
         break;
       case MSG_SET_OFFSET:
-          offsets[command & 0x7] = read_two();
+        offsets[command & 0x7] = read_two();
         break;
       case MSG_SET_POS:
-          if(command & 0x01){
-            down_pos = (int16_t)read_two();
-          } else {
-            up_pos = (int16_t)read_two();
-          }
+        if(command & 0x01){
+          down_pos = (int16_t)read_two();
+        } else {
+          up_pos = (int16_t)read_two();
+        }
         break;
       case MSG_QUERY:
         switch(command & 0xF0) {

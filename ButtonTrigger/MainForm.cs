@@ -16,13 +16,13 @@ namespace ButtonTrigger
 
     private Midi.Devices.IOutputDevice device;
     private Timer _timer;
-    private List<PointController> points;
+    private List<PointControllerDrums> points;
 
 
     private struct DragState
     {
       public bool Dragging;
-      public PointController point;
+      public IPointController point;
     };
     private DragState dragState = new DragState();
 
@@ -93,7 +93,7 @@ namespace ButtonTrigger
     {
       var pt = points.Count;
       p.OnValueChange += (v) => { if (v) PointTrigger(pt); };
-      points.Add(new PointController(p));
+      points.Add(new PointControllerDrums(p));
       pointControllerPanel.Controls.Add(points[points.Count - 1]);
     }
 
@@ -127,7 +127,8 @@ namespace ButtonTrigger
       }
       windowSelector.SelectedIndex = 0;
       windowSelector.SelectedIndexChanged += ComboBox1_SelectedIndexChanged;
-      points = new List<PointController>();
+
+      points = new List<PointControllerDrums>();
 
       foreach(var d in Midi.Devices.DeviceManager.OutputDevices)
       {
@@ -135,9 +136,21 @@ namespace ButtonTrigger
       }
       deviceSelector.SelectedIndexChanged += DeviceSelector_SelectedIndexChanged;
 
+
       windowBox.MouseDown += PictureBox1_MouseDown;
       windowBox.MouseMove += PictureBox1_MouseMove;
       windowBox.MouseUp += PictureBox1_MouseUp;
+
+      // Guitar stuff
+      timer = new Timer();
+      timer.Interval = 150;
+      timer.Tick += Timer_Tick;
+      foreach (var p in MotorController.GetPorts())
+      {
+        portSelector.Items.Add(p);
+      }
+      portSelector.SelectedIndexChanged += Port_SelectedIndexChanged;
+
     }
 
     private void DeviceSelector_SelectedIndexChanged(object sender, EventArgs e)
@@ -164,7 +177,7 @@ namespace ButtonTrigger
         var yP = e.Y / (float)windowBox.Height;
         dragState.point.p.xP = xP;
         dragState.point.p.yP = yP;
-        dragState.point.Update();
+        dragState.point.UpdateValues();
       }
     }
 
@@ -285,6 +298,126 @@ namespace ButtonTrigger
     private void button2_Click_1(object sender, EventArgs e)
     {
       _timer.Start();
+    }
+
+    private void label3_Click(object sender, EventArgs e)
+    {
+
+    }
+
+    private MotorController controller;
+    private Timer timer;
+    //public GuitarPlayer()
+    //{
+    //  InitializeComponent();
+    //}
+
+
+
+    private void Port_SelectedIndexChanged(object sender, EventArgs e)
+    {
+      this.controller?.Dispose();
+      flowLayoutPanel1.Controls.Clear();
+
+      var controller = new MotorController((string)portSelector.SelectedItem);
+      flowLayoutPanel1.SuspendLayout();
+      var tab = 0;
+      foreach (var x in controller.Offsets)
+      {
+        var p = new DetectorPoint();
+        p.midiNote = tab;
+        var pc = new PointControllerGuitar(p);
+        pc.offsetUpDown.Tag = tab;
+        pc.offsetUpDown.TabIndex = tab;
+        pc.offsetUpDown.Maximum = 32767;
+        pc.offsetUpDown.Minimum = -32768;
+        pc.offsetUpDown.Value = x;
+        pc.offsetUpDown.ValueChanged += UpDown_ValueChanged;
+        var t = tab;
+        pc.toggleButton.Click += (o, ea) =>
+        {
+          if (controller.State[t])
+          {
+            pc.toggleButton.Checked = false;
+            pc.toggleButton.CheckState = CheckState.Unchecked;
+          } else
+          {
+            pc.toggleButton.Checked = true;
+            pc.toggleButton.CheckState = CheckState.Checked;
+          }
+          controller.State[t] = pc.toggleButton.Checked;
+          controller.SendState();
+        };
+        flowLayoutPanel1.Controls.Add(pc);
+        tab++;
+      }
+      flowLayoutPanel1.ResumeLayout(false);
+      flowLayoutPanel1.PerformLayout();
+
+      try
+      {
+        downPosInput.Value = controller.DownPos;
+        upPosInput.Value = controller.UpPos;
+      }
+      catch (Exception) { }
+      this.controller = controller;
+    }
+
+    private void UpDown_ValueChanged(object sender, EventArgs e)
+    {
+      var control = sender as NumericUpDown;
+      var index = (int)control.Tag;
+      controller?.SetOffset((byte)index, (short)control.Value);
+    }
+
+    private void startTest_Click(object sender, EventArgs e)
+    {
+      timer.Start();
+    }
+    
+
+    private int index = 0;
+    private void Timer_Tick(object sender, EventArgs e)
+    {
+      if(controller != null)
+      {
+        controller.State[index] = false;
+        index = (index + 1) % controller.State.Length;
+        controller.State[index] = true;
+        controller.SendState();
+      }
+    }
+
+    private void stopTest_Click(object sender, EventArgs e)
+    {
+      timer.Stop();
+      if(controller != null)
+      {
+        controller.State[index] = false;
+        controller.SendState();
+      }
+    }
+
+    private void upPos_ValueChanged(object sender, EventArgs e)
+    {
+      controller?.SetUpPos((ushort)upPosInput.Value);
+    }
+
+    private void downPos_ValueChanged(object sender, EventArgs e)
+    {
+      controller?.SetDownPos((ushort)downPosInput.Value);
+    }
+
+    private void disconnectBtn_Click(object sender, EventArgs e)
+    {
+      flowLayoutPanel1.Controls.Clear();
+      controller?.Dispose();
+      controller = null;
+    }
+
+    private void button3_Click(object sender, EventArgs e)
+    {
+      controller?.Save();
     }
   }
 }

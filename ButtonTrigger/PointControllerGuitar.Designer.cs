@@ -1,6 +1,6 @@
 ﻿namespace ButtonTrigger
 {
-    partial class PointController
+    partial class PointControllerGuitar
     {
         /// <summary> 
         /// Required designer variable.
@@ -28,7 +28,6 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.removeButton = new System.Windows.Forms.Button();
             this.red = new System.Windows.Forms.NumericUpDown();
             this.posX = new System.Windows.Forms.NumericUpDown();
             this.posY = new System.Windows.Forms.NumericUpDown();
@@ -36,29 +35,23 @@
             this.blue = new System.Windows.Forms.NumericUpDown();
             this.panel1 = new System.Windows.Forms.Panel();
             this.colorPicker = new System.Windows.Forms.ColorDialog();
-            this.comboBox1 = new System.Windows.Forms.ComboBox();
             this.tolerance = new System.Windows.Forms.NumericUpDown();
+            this.label1 = new System.Windows.Forms.Label();
+            this.label2 = new System.Windows.Forms.Label();
+            this.offsetUpDown = new System.Windows.Forms.NumericUpDown();
+            this.toggleButton = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.red)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.posX)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.posY)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.green)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.blue)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.tolerance)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.offsetUpDown)).BeginInit();
             this.SuspendLayout();
-            // 
-            // removeButton
-            // 
-            this.removeButton.Location = new System.Drawing.Point(3, 114);
-            this.removeButton.Name = "removeButton";
-            this.removeButton.Size = new System.Drawing.Size(114, 23);
-            this.removeButton.TabIndex = 0;
-            this.removeButton.Text = "Remove";
-            this.removeButton.UseVisualStyleBackColor = true;
-            this.removeButton.Click += new System.EventHandler(this.button1_Click);
             // 
             // red
             // 
-            this.red.Location = new System.Drawing.Point(3, 88);
+            this.red.Location = new System.Drawing.Point(3, 80);
             this.red.Maximum = new decimal(new int[] {
             255,
             0,
@@ -77,7 +70,7 @@
             0,
             0,
             65536});
-            this.posX.Location = new System.Drawing.Point(3, 3);
+            this.posX.Location = new System.Drawing.Point(3, 21);
             this.posX.Name = "posX";
             this.posX.Size = new System.Drawing.Size(54, 20);
             this.posX.TabIndex = 3;
@@ -91,7 +84,7 @@
             0,
             0,
             65536});
-            this.posY.Location = new System.Drawing.Point(63, 3);
+            this.posY.Location = new System.Drawing.Point(63, 21);
             this.posY.Name = "posY";
             this.posY.Size = new System.Drawing.Size(54, 20);
             this.posY.TabIndex = 4;
@@ -99,7 +92,7 @@
             // 
             // green
             // 
-            this.green.Location = new System.Drawing.Point(41, 88);
+            this.green.Location = new System.Drawing.Point(41, 80);
             this.green.Maximum = new decimal(new int[] {
             255,
             0,
@@ -112,7 +105,7 @@
             // 
             // blue
             // 
-            this.blue.Location = new System.Drawing.Point(80, 88);
+            this.blue.Location = new System.Drawing.Point(80, 80);
             this.blue.Maximum = new decimal(new int[] {
             255,
             0,
@@ -126,26 +119,11 @@
             // panel1
             // 
             this.panel1.BackColor = System.Drawing.Color.Black;
-            this.panel1.Location = new System.Drawing.Point(80, 55);
+            this.panel1.Location = new System.Drawing.Point(80, 47);
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(35, 27);
             this.panel1.TabIndex = 8;
             this.panel1.Click += new System.EventHandler(this.panel1_Click);
-            // 
-            // comboBox1
-            // 
-            this.comboBox1.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.comboBox1.FormattingEnabled = true;
-            this.comboBox1.Items.AddRange(new object[] {
-            "Red",
-            "Yellow",
-            "Blue",
-            "Green"});
-            this.comboBox1.Location = new System.Drawing.Point(45, 28);
-            this.comboBox1.Name = "comboBox1";
-            this.comboBox1.Size = new System.Drawing.Size(72, 21);
-            this.comboBox1.TabIndex = 9;
-            this.comboBox1.SelectedIndexChanged += new System.EventHandler(this.comboBox1_SelectedIndexChanged);
             // 
             // tolerance
             // 
@@ -155,7 +133,7 @@
             0,
             0,
             131072});
-            this.tolerance.Location = new System.Drawing.Point(3, 62);
+            this.tolerance.Location = new System.Drawing.Point(3, 54);
             this.tolerance.Maximum = new decimal(new int[] {
             1,
             0,
@@ -166,35 +144,84 @@
             this.tolerance.TabIndex = 10;
             this.tolerance.ValueChanged += new System.EventHandler(this.ValueChanged);
             // 
-            // PointController
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(4, 4);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(43, 13);
+            this.label1.TabIndex = 11;
+            this.label1.Text = "Motor 8";
+            // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(0, 103);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(38, 13);
+            this.label2.TabIndex = 12;
+            this.label2.Text = "Offset:";
+            // 
+            // offsetUpDown
+            // 
+            this.offsetUpDown.Location = new System.Drawing.Point(41, 101);
+            this.offsetUpDown.Maximum = new decimal(new int[] {
+            200,
+            0,
+            0,
+            0});
+            this.offsetUpDown.Minimum = new decimal(new int[] {
+            200,
+            0,
+            0,
+            -2147483648});
+            this.offsetUpDown.Name = "offsetUpDown";
+            this.offsetUpDown.Size = new System.Drawing.Size(37, 20);
+            this.offsetUpDown.TabIndex = 13;
+            // 
+            // toggleButton
+            // 
+            this.toggleButton.Appearance = System.Windows.Forms.Appearance.Button;
+            this.toggleButton.AutoCheck = false;
+            this.toggleButton.AutoSize = true;
+            this.toggleButton.Location = new System.Drawing.Point(3, 127);
+            this.toggleButton.Name = "toggleButton";
+            this.toggleButton.Size = new System.Drawing.Size(50, 23);
+            this.toggleButton.TabIndex = 15;
+            this.toggleButton.Text = "Toggle";
+            this.toggleButton.UseVisualStyleBackColor = true;
+            // 
+            // PointControllerGuitar
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.Controls.Add(this.toggleButton);
+            this.Controls.Add(this.offsetUpDown);
+            this.Controls.Add(this.label2);
+            this.Controls.Add(this.label1);
             this.Controls.Add(this.tolerance);
-            this.Controls.Add(this.comboBox1);
             this.Controls.Add(this.panel1);
             this.Controls.Add(this.blue);
             this.Controls.Add(this.green);
             this.Controls.Add(this.posY);
             this.Controls.Add(this.posX);
             this.Controls.Add(this.red);
-            this.Controls.Add(this.removeButton);
-            this.Name = "PointController";
-            this.Size = new System.Drawing.Size(120, 140);
+            this.Name = "PointControllerGuitar";
+            this.Size = new System.Drawing.Size(120, 153);
             ((System.ComponentModel.ISupportInitialize)(this.red)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.posX)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.posY)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.green)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.blue)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.tolerance)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.offsetUpDown)).EndInit();
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
         #endregion
-
-        private System.Windows.Forms.Button removeButton;
         private System.Windows.Forms.NumericUpDown red;
         private System.Windows.Forms.NumericUpDown posX;
         private System.Windows.Forms.NumericUpDown posY;
@@ -202,7 +229,10 @@
     private System.Windows.Forms.NumericUpDown blue;
     private System.Windows.Forms.Panel panel1;
     private System.Windows.Forms.ColorDialog colorPicker;
-    private System.Windows.Forms.ComboBox comboBox1;
     private System.Windows.Forms.NumericUpDown tolerance;
+    private System.Windows.Forms.Label label1;
+    private System.Windows.Forms.Label label2;
+    public System.Windows.Forms.NumericUpDown offsetUpDown;
+    public System.Windows.Forms.CheckBox toggleButton;
   }
 }

@@ -35,8 +35,14 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="CaptureManagerToCSharpProxy, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\CaptureManager.1.8.0\lib\CaptureManagerToCSharpProxy.dll</HintPath>
+    <Reference Include="AForge, Version=2.2.5.0, Culture=neutral, PublicKeyToken=c1db6ff4eaa06aeb, processorArchitecture=MSIL">
+      <HintPath>..\packages\AForge.2.2.5\lib\AForge.dll</HintPath>
+    </Reference>
+    <Reference Include="AForge.Video, Version=2.2.5.0, Culture=neutral, PublicKeyToken=cbfb6e07d173c401, processorArchitecture=MSIL">
+      <HintPath>..\packages\AForge.Video.2.2.5\lib\AForge.Video.dll</HintPath>
+    </Reference>
+    <Reference Include="AForge.Video.DirectShow, Version=2.2.5.0, Culture=neutral, PublicKeyToken=61ea4348d43881b7, processorArchitecture=MSIL">
+      <HintPath>..\packages\AForge.Video.DirectShow.2.2.5\lib\AForge.Video.DirectShow.dll</HintPath>
     </Reference>
     <Reference Include="Midi, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\midi-dot-net2.2.0.1\lib\net461\Midi.dll</HintPath>
@@ -83,17 +89,25 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DetectorPoint.cs" />
+    <Compile Include="IPointController.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="MainForm.Designer.cs">
       <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="PointController.cs">
+    <Compile Include="MotorController.cs" />
+    <Compile Include="PointControllerGuitar.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="PointController.Designer.cs">
-      <DependentUpon>PointController.cs</DependentUpon>
+    <Compile Include="PointControllerGuitar.Designer.cs">
+      <DependentUpon>PointControllerGuitar.cs</DependentUpon>
+    </Compile>
+    <Compile Include="PointControllerDrums.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="PointControllerDrums.Designer.cs">
+      <DependentUpon>PointControllerDrums.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -102,8 +116,12 @@
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="PointController.resx">
-      <DependentUpon>PointController.cs</DependentUpon>
+    <EmbeddedResource Include="PointControllerGuitar.resx">
+      <DependentUpon>PointControllerGuitar.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="PointControllerDrums.resx">
+      <DependentUpon>PointControllerDrums.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
