@@ -2,10 +2,63 @@
 #include <EEPROM.h>
 #include <Adafruit_PWMServoDriver.h>
 
+/* Command format:
+ FIXED SIZE 3 BYTES
+
+ First byte: Opcode and 4 bits of data
+ +0-1-2-3+4-5-6-7+
+ | OPCODE| IMM   |
+ +-------+-------+
+
+ Second two bytes are data, little endian.
+ Response size is determined by the opcode...
+
+Commands:
+ OP : DT : RS : DESC
+  0 :  1 :  0 : Set state
+  1 :  2 :  0 : Set motor[IMM] offset
+  2 :  2 :  0 : Set Down position
+  3 :  2 :  0 : Set up position
+  4 :  0 :  1 : Query state
+  5 :  0 :  2 : Query Down position
+  6 :  0 :  2 : Query Up position
+  7 :  0 :  2 : Query motor[IMM] offset
+  8 :  0 :  0 : Commit config to EEPROM
+  9 :  0 :  0 : Reload config from EEPROM
+A-F :  0 :  0 : Reserved
+*/
+
+
+#define OP_MASK 0xF0
+#define IMM_MASK 0x0F
+
+#define OP_SET_STATE    0x00
+#define OP_SET_OFFSET   0x10
+#define OP_SET_DOWN     0x20
+#define OP_SET_UP       0x30
+#define OP_QUERY_STATE  0x40
+#define OP_QUERY_DOWN   0x50
+#define OP_QUERY_UP     0x60
+#define OP_QUERY_OFFSET 0x70
+#define OP_COMMIT       0x80
+#define OP_RELOAD       0x90
+
+// Configuration
+#define SERVOS 6
+#define BAUD 57600
+#define MAGIC 0x45
+
+// We can adjust the eeprom start address for wear levelling
+#define EEPROM_START 0x0001
+#define EEPROM_UP_POS EEPROM_START+0x00
+#define EEPROM_DOWN_POS EEPROM_START+0x02
+#define EEPROM_OFFSETS EEPROM_START+0x04
+
+// RAM
+
 // default I2C address 0x40
 Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 
-#define SERVOS 6
 // Motors should be hooked up: Green, Red, Yellow, Blue, Orange, Strum
 // Acceptable defaults
 int16_t offsets[] = {1, 2, 3, 4, 5, 6 };
@@ -13,43 +66,23 @@ uint16_t down_pos = 425;
 uint16_t up_pos = 360;
 char state = 0;
 
-// 00xx_xxxx : Set state to xx_xxxx
-// 0100_0xxx : set offset for motor xxx to the value in the next two bytes
-// 1000_0000 : set down position "" ""
-// 1000_0001 : set up position "" ""
-// 1100_0000 : query state
-// 1100_0001 : query downpos
-// 1100_0010 : query up pos
-// 1110_1xxx : query offset for motor xxx
-// 1111_0000 : save to nvram
-// 1111_1111 : reload from nvram
+// Command buffer
+union {
+  struct {
+    byte op;
+    uint16_t usdata;
+  };
+  byte data[3]; 
+} CMD;
 
-// Different commands
-#define MSG_STATE 0x00
-#define MSG_SET_OFFSET 0x40
-#define MSG_SET_POS 0x80
-#define MSG_QUERY 0xC0
-#define MSG_EEPROM 0xF0
-
-int command = 0;
-char buffer[2];
-
-// Read big-endian short
-uint16_t read_two() {
-  Serial.readBytes(buffer, 2);
-  return buffer[1] | (buffer[0] << 8);
-}
 
 void write_two(uint16_t val) {
-  buffer[0] = val >> 8;
-  buffer[1] = val & 0xFF;
+  static char buffer[2];
+  buffer[0] = val & 0xFF;
+  buffer[1] = val >> 8;
   Serial.write(buffer, 2);
 }
 
-#define EEPROM_START 0x0001
-#define EEPROM_UP_POS EEPROM_START+0x00
-#define EEPROM_DOWN_POS EEPROM_START+0x02
-#define EEPROM_OFFSETS EEPROM_START+0x04
 void eeprom_load() {
   up_pos = EEPROM.read(EEPROM_UP_POS) | ((uint16_t)EEPROM.read(EEPROM_UP_POS+1) << 8);
   down_pos = EEPROM.read(EEPROM_DOWN_POS) | ((uint16_t)EEPROM.read(EEPROM_DOWN_POS+1) << 8);
@@ -69,9 +102,8 @@ void eeprom_commit() {
   }
 }
 
-#define MAGIC 0x45
 void setup() {
-  Serial.begin(57600);
+  Serial.begin(BAUD);
   pwm.begin();
   pwm.setPWMFreq(50);  // Analog servos run at ~60 Hz updates
   // Check for valid EEPROM header before loading values
@@ -89,48 +121,37 @@ void setup() {
 }
 
 void loop() {
-  command = Serial.read();
-  if(command != -1) {
-    switch(command & 0xC0) {
-      case MSG_STATE:
-        state = command & 0x3f;
+  if(Serial.readBytes(CMD.data, 3) == 3) {
+    switch(CMD.op & OP_MASK) {
+      case OP_SET_STATE:
+        state = CMD.data[1];
         break;
-      case MSG_SET_OFFSET:
-        offsets[command & 0x7] = read_two();
+      case OP_SET_OFFSET:
+        offsets[CMD.op & IMM_MASK] = CMD.usdata;
         break;
-      case MSG_SET_POS:
-        if(command & 0x01){
-          down_pos = (int16_t)read_two();
-        } else {
-          up_pos = (int16_t)read_two();
-        }
+      case OP_SET_DOWN:
+        down_pos = CMD.usdata;
         break;
-      case MSG_QUERY:
-        switch(command & 0xF0) {
-          case 0xC0:
-            switch(command & 0x3) {
-              case 0:
-                Serial.write(state);
-                break;
-              case 1:
-                write_two(down_pos);
-                break;
-              case 2:
-                write_two(up_pos);
-                break;
-            }
-            break;
-          case 0xE0:
-            write_two(offsets[command & 0x7]);
-            break;
-          case 0xF0:
-            if((command & 0xF) == 0x0) {
-              eeprom_commit();
-            }else {
-              eeprom_load();
-            }
-            break;
-        }
+      case OP_SET_UP:
+        up_pos = CMD.usdata;
+        break;
+      case OP_QUERY_STATE:
+        Serial.write(state);
+        break;
+      case OP_QUERY_DOWN:
+        write_two(down_pos);
+        break;
+      case OP_QUERY_UP:
+        write_two(up_pos);
+        break;
+      case OP_QUERY_OFFSET:
+        write_two(offsets[CMD.op & IMM_MASK]);
+        break;
+      case OP_COMMIT:
+        eeprom_commit();
+        break;
+      case OP_RELOAD:
+        eeprom_load();
         break;
     }
     for(char i = 0; i < SERVOS; i++) {
@@ -140,5 +161,5 @@ void loop() {
       // Bit 0 (LSB) corresponds to motor 0
       pwm.setPWM(i, 0, offsets[i] + ((state & (1 << i)) ? down_pos : up_pos));
     }
-  } // command != -1
+  }
 }
