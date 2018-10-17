@@ -1,3 +1,6 @@
 [submodule "DtxCS"]
 	path = DtxCS
 	url = https://github.com/maxton/DtxCS.git
+[submodule "Dependencies/LibForge"]
+	path = Dependencies/LibForge
+	url = https://github.com/maxton/LibForge.git

@@ -16,6 +16,7 @@ namespace ButtonTrigger
 
     private Midi.Devices.IOutputDevice device;
     private Timer _timer;
+    private RBMidPlayer player;
     private List<PointControllerDrums> points;
 
 
@@ -140,11 +141,7 @@ namespace ButtonTrigger
       windowBox.MouseDown += PictureBox1_MouseDown;
       windowBox.MouseMove += PictureBox1_MouseMove;
       windowBox.MouseUp += PictureBox1_MouseUp;
-
-      // Guitar stuff
-      timer = new Timer();
-      timer.Interval = 150;
-      timer.Tick += Timer_Tick;
+      
       foreach (var p in MotorController.GetPorts())
       {
         portSelector.Items.Add(p);
@@ -306,7 +303,6 @@ namespace ButtonTrigger
     }
 
     private MotorController controller;
-    private Timer timer;
     //public GuitarPlayer()
     //{
     //  InitializeComponent();
@@ -372,30 +368,31 @@ namespace ButtonTrigger
 
     private void startTest_Click(object sender, EventArgs e)
     {
-      timer.Start();
+      if (player != null) return;
+      using (var ofd = new OpenFileDialog())
+      {
+        ofd.Filter = "RBMid Files|*.rbmid_*";
+        if(ofd.ShowDialog() == DialogResult.OK)
+        {
+          LibForge.Midi.RBMid midi;
+          using (var f = ofd.OpenFile())
+          {
+            midi = LibForge.Midi.RBMidReader.ReadStream(f);
+          }
+          player = new RBMidPlayer(controller, midi.GemTracks[2].Gems[3]);
+          player.Play();
+        }
+      }
     }
     
 
     private int index = 0;
-    private void Timer_Tick(object sender, EventArgs e)
-    {
-      if(controller != null)
-      {
-        controller.State[index] = false;
-        index = (index + 1) % controller.State.Length;
-        controller.State[index] = true;
-        controller.SendState();
-      }
-    }
 
     private void stopTest_Click(object sender, EventArgs e)
     {
-      timer.Stop();
-      if(controller != null)
-      {
-        controller.State[index] = false;
-        controller.SendState();
-      }
+      player?.Stop();
+      player?.Dispose();
+      player = null;
     }
 
     private void upPos_ValueChanged(object sender, EventArgs e)

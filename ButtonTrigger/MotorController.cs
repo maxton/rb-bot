@@ -3,7 +3,7 @@ using System.IO.Ports;
 
 namespace ButtonTrigger
 {
-  class MotorController : IDisposable
+  public class MotorController : IDisposable
   {
     struct Opcodes
     {
@@ -84,6 +84,14 @@ namespace ButtonTrigger
       Offsets[motor] = pos;
     }
 
+    public void ClearState()
+    {
+      for(int i = 0; i < State.Length; i++)
+      {
+        State[i] = false;
+      }
+      Issue(Command(Opcodes.SetState, 0));
+    }
     public void SendState()
     {
       byte state = 0;
