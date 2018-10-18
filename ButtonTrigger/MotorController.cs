@@ -76,7 +76,7 @@ namespace ButtonTrigger
 
     public void Save() => Issue(Command(Opcodes.CommitConfig));
 
-    public void Reload() => Issue(Command(Opcodes.CommitConfig));
+    public void Reload() => Issue(Command(Opcodes.ReloadConfig));
 
     public void SetOffset(byte motor, short pos)
     {
