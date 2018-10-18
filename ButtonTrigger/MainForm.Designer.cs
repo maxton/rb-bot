@@ -434,6 +434,7 @@
       this.Name = "MainForm";
       this.ShowIcon = false;
       this.Text = "RB Bot";
+      this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
       this.Load += new System.EventHandler(this.MainForm_Load);
       ((System.ComponentModel.ISupportInitialize)(this.windowBox)).EndInit();
       this.menuStrip1.ResumeLayout(false);

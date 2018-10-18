@@ -416,5 +416,10 @@ namespace ButtonTrigger
     {
       controller?.Save();
     }
+
+    private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+    {
+      player?.Dispose();
+    }
   }
 }
